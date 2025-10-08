@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MentorMatch - Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            min-height: 100vh;
+        }
+        #login-container {
+            position: relative;
+            background-image: url('https://placehold.co/1200x800/8b5cf6/ffffff?text=College+Campus');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        #login-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+            z-index: 0;
+        }
+        #login-container > div {
+            position: relative;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+<div id="login-container">
+    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-sm text-center">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">College Login</h2>
+        <p class="text-gray-600 mb-6">Enter your credentials below.</p>
+        <form id="login-form" class="bg-white p-6 rounded-lg shadow-md max-w-sm mx-auto">
+            <div class="mb-4">
+                <label for="college-id-input" class="block text-gray-700">College ID</label>
+                <input type="email" id="college-id-input" class="w-full p-2 border border-gray-300 rounded mt-1" placeholder="Enter your college email" required />
+            </div>
+            <div class="mb-4">
+                <label for="password-input" class="block text-gray-700">Password</label>
+                <input type="password" id="password-input" class="w-full p-2 border border-gray-300 rounded mt-1" placeholder="Enter your password" required />
+            </div>
+            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Login</button>
+            <p id="error-message" class="text-red-500 text-sm mt-4 hidden"></p>
+        </form>
+    </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+// Firebase configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyCDjvG08LHJ0ahNwTbl4stG5mJEODP00c8",
+    authDomain: "san-mentor.firebaseapp.com",
+    projectId: "san-mentor",
+    storageBucket: "san-mentor.firebasestorage.app",
+    messagingSenderId: "384516195677",
+    appId: "1:384516195677:web:e0224b177c9ad04f3e14b4"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const form = document.getElementById('login-form');
+const errorMsg = document.getElementById('error-message');
+
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorMsg.classList.add('hidden');
+
+    const email = document.getElementById('college-id-input').value.trim();
+    const password = document.getElementById('password-input').value.trim();
+
+    try {
+        // Sign in with Firebase Auth
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        // Fetch role from Firestore
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (!userDoc.exists()) throw new Error("User role not found. Contact admin.");
+
+        const role = userDoc.data().role;
+
+        // Save user info in localStorage
+        localStorage.setItem('currentUser', JSON.stringify({
+            email: user.email,
+            uid: user.uid,
+            role
+        }));
+
+        // Redirect based on role
+        if (role === "mentor") {
+            window.location.href = "./mentor_dashboard.html";
+        } else {
+            window.location.href = "./student_dashboard.html";
+        }
+    } catch (err) {
+        errorMsg.textContent = err.message;
+        errorMsg.classList.remove('hidden');
+    }
+});
+</script>
+
+</body>
+</html>
